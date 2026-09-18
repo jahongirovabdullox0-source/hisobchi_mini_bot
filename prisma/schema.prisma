@@ -1,0 +1,163 @@
+// =====================================================
+//  HISOBCHI — Ma'lumotlar bazasi sxemasi (PostgreSQL)
+// =====================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  // Bog'liq jadvallar bitta so'rovda (JOIN) olinadi — uzoqdagi bazada tezroq
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Neon: jadvallarni yaratish (db push) pooler'siz to'g'ridan-to'g'ri ulanish orqali
+  directUrl = env("DIRECT_URL")
+}
+
+/// Amal turi: daromad yoki harajat
+enum TxType {
+  INCOME
+  EXPENSE
+}
+
+/// Qarz yo'nalishi
+enum DebtDirection {
+  I_OWE      // Men qarzdorman
+  OWED_TO_ME // Menga qarzdor
+}
+
+/// Foydalanuvchi (Telegram orqali kirgan har bir odam)
+model User {
+  id         Int      @id @default(autoincrement())
+  telegramId String   @unique
+  firstName  String
+  lastName   String?
+  username   String?
+  phone      String?
+  photoUrl   String?
+  isBlocked    Boolean  @default(false)
+  onboarded    Boolean  @default(false)
+  dailyReport  Boolean  @default(true)
+  notifyOnSave Boolean  @default(true)
+  lastSeenAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  transactions Transaction[]
+  debts        Debt[]
+  budgets      Budget[]
+}
+
+/// Yo'nalish: Bog'dorchilik, Chorvachilik, Tadbirkorlik, Chet el puli ...
+model Sector {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  name      String
+  icon      String   @default("📁")
+  color     String   @default("#111827")
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categories   Category[]
+  transactions Transaction[]
+  budgets      Budget[]
+}
+
+/// Kategoriya: masalan "Yem-xashak" (harajat), "Sut sotuvi" (daromad)
+model Category {
+  id        Int      @id @default(autoincrement())
+  sectorId  Int
+  sector    Sector   @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  name      String
+  icon      String   @default("•")
+  type      TxType
+  unit      String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@unique([sectorId, name, type])
+  @@index([sectorId, type])
+}
+
+/// Har bir kirim yoki chiqim yozuvi
+model Transaction {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sectorId   Int
+  sector     Sector    @relation(fields: [sectorId], references: [id], onDelete: Restrict)
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  type       TxType
+  /// So'mga o'girilgan summa (barcha hisobotlar shu bo'yicha)
+  amount     Decimal   @db.Decimal(18, 2)
+  /// Kiritilgan valyutadagi asl summa
+  rawAmount  Decimal   @db.Decimal(18, 2)
+  currency   String    @default("UZS")
+  /// Kiritilgan paytdagi kurs (1 valyuta = rate so'm)
+  rate       Decimal   @default(1) @db.Decimal(18, 4)
+  quantity   Decimal?  @db.Decimal(18, 2)
+  unit       String?
+  note       String?
+  occurredAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([userId, occurredAt])
+  @@index([userId, sectorId])
+  @@index([userId, type])
+}
+
+/// Qarz daftari
+model Debt {
+  id         Int           @id @default(autoincrement())
+  userId     Int
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  direction  DebtDirection
+  person     String
+  phone      String?
+  amount     Decimal       @db.Decimal(18, 2)
+  paidAmount Decimal       @default(0) @db.Decimal(18, 2)
+  currency   String        @default("UZS")
+  note       String?
+  dueDate    DateTime?
+  isClosed   Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([userId, isClosed])
+}
+
+/// Oylik reja (byudjet) — har bir yo'nalish uchun
+model Budget {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sectorId    Int
+  sector      Sector   @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  year        Int
+  month       Int
+  planIncome  Decimal  @default(0) @db.Decimal(18, 2)
+  planExpense Decimal  @default(0) @db.Decimal(18, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, sectorId, year, month])
+}
+
+/// Valyuta kurslari (1 birlik = rate so'm)
+model ExchangeRate {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  symbol    String   @default("")
+  rate      Decimal  @db.Decimal(18, 4)
+  updatedAt DateTime @updatedAt
+}

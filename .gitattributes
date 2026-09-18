@@ -1,0 +1,6 @@
+# Barcha matnli fayllar repozitoriyda LF bilan saqlanadi
+* text=auto eol=lf
+
+# Windows buyruq fayllari CRLF bo'lishi shart
+*.bat text eol=crlf
+*.cmd text eol=crlf
