@@ -123,6 +123,13 @@ const RATES = [
 ];
 
 async function main() {
+  // Baza allaqachon to'ldirilgan bo'lsa tegmaymiz: aks holda admin o'zgartirgan/o'chirgan
+  // kategoriyalar har deployda qaytadan paydo bo'lardi. Majburan: node prisma/seed.js --force
+  if (!process.argv.includes('--force') && (await prisma.sector.count()) > 0) {
+    console.log("✅ Baza allaqachon to'ldirilgan — boshlang'ich ma'lumotlar qayta yozilmadi.");
+    return;
+  }
+
   console.log("⏳ Boshlang'ich ma'lumotlar yozilmoqda...");
 
   for (let i = 0; i < SECTORS.length; i++) {

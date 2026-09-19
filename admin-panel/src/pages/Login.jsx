@@ -39,7 +39,7 @@ export default function Login({ onSuccess }) {
         <button className="btn btn-primary btn-block" disabled={busy || !password}>
           {busy ? 'Tekshirilmoqda...' : 'Kirish'}
         </button>
-        <p className="muted tiny">Parol .env faylidagi ADMIN_PASSWORD qiymati</p>
+        <p className="muted tiny">Parol — serverdagi ADMIN_PASSWORD qiymati</p>
       </form>
     </div>
   );

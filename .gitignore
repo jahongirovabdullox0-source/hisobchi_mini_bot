@@ -54,3 +54,6 @@ $RECYCLE.BIN/
 
 # --- Claude Code shaxsiy sozlamalari ---
 .claude/settings.local.json
+
+# --- Vercel CLI loyiha bog'lanishi ---
+.vercel/

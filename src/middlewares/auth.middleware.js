@@ -88,14 +88,49 @@ async function telegramAuth(req, res, next) {
 
 /* ---------------------------- ADMIN ---------------------------- */
 
-/** Admin Panel faqat shu kompyuterdan (localhost) ishlaydi — ngrok orqali kirib bo'lmaydi */
+const WEAK_PASSWORDS = new Set(['admin12345', 'admin123', 'admin', 'password', '12345678', '123456789', 'qwerty123']);
+
+/** Internetga ochiq Admin Panel uchun parol yetarlicha kuchlimi */
+function isWeakAdminPassword(password = config.admin.password) {
+  return !password || password.length < 10 || WEAK_PASSWORDS.has(String(password).toLowerCase());
+}
+
+/**
+ * Admin API kimga ochiq:
+ *  - kompyuterda (standart) — faqat shu kompyuterdan, ngrok orqali tashqaridan yopiq;
+ *  - serverda ADMIN_ALLOW_REMOTE=true bo'lsa — internetdan ham (kuchli parol talab qilinadi).
+ */
 function localOnly(req, res, next) {
-  if (viaTunnel(req)) return res.status(403).json({ error: 'Admin Panel faqat kompyuterdan (localhost) ishlaydi' });
+  if (config.admin.allowRemote || !viaTunnel(req)) return next();
+  return res.status(403).json({ error: 'Admin Panel faqat kompyuterdan (localhost) ishlaydi' });
+}
+
+/* Parolni taxmin qilishga urinishlardan himoya: 15 daqiqada 10 ta xato urinish */
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_FAILS = 10;
+const loginFails = new Map();
+
+function loginLimiter(req, res, next) {
+  const entry = loginFails.get(req.ip);
+  if (entry && Date.now() - entry.first < LOGIN_WINDOW_MS && entry.count >= LOGIN_MAX_FAILS) {
+    return res.status(429).json({ error: "Juda ko'p noto'g'ri urinish. 15 daqiqadan keyin qayta urining." });
+  }
   return next();
 }
 
+function recordLoginFail(ip) {
+  const entry = loginFails.get(ip);
+  if (!entry || Date.now() - entry.first >= LOGIN_WINDOW_MS) loginFails.set(ip, { count: 1, first: Date.now() });
+  else entry.count += 1;
+}
+
+function resetLoginFails(ip) {
+  loginFails.delete(ip);
+}
+
+/** Kirish tokeni: parol maxfiy kalit bilan imzolanadi (HMAC) */
 function adminToken() {
-  return crypto.createHash('sha256').update(`hisobchi-admin:${config.admin.password}`).digest('hex');
+  return crypto.createHmac('sha256', config.admin.secret).update(`hisobchi-admin:${config.admin.password}`).digest('hex');
 }
 
 function checkAdminPassword(password) {
@@ -114,4 +149,15 @@ function adminAuth(req, res, next) {
   return next();
 }
 
-module.exports = { telegramAuth, adminAuth, localOnly, adminToken, checkAdminPassword, verifyInitData };
+module.exports = {
+  telegramAuth,
+  adminAuth,
+  localOnly,
+  loginLimiter,
+  recordLoginFail,
+  resetLoginFails,
+  isWeakAdminPassword,
+  adminToken,
+  checkAdminPassword,
+  verifyInitData,
+};

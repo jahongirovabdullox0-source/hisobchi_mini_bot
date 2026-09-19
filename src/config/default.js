@@ -18,10 +18,17 @@ const config = {
     token: (process.env.BOT_TOKEN || '').trim(),
     webAppUrl: (process.env.WEBAPP_URL || '').trim().replace(/\/+$/, ''),
     dailyReportCron: process.env.DAILY_REPORT_CRON || '0 21 * * *',
+    // Serverning ochiq manzili bo'lsa (Render o'zi RENDER_EXTERNAL_URL beradi) — bot webhook rejimida ishlaydi,
+    // aks holda (kompyuterda) — polling rejimida
+    webhookDomain: (process.env.BOT_WEBHOOK_DOMAIN || process.env.RENDER_EXTERNAL_URL || '').trim(),
   },
 
   admin: {
     password: process.env.ADMIN_PASSWORD || 'admin12345',
+    // true — Admin API internetdan (masalan, Vercel'dagi Admin Paneldan) ochiladi
+    allowRemote: bool(process.env.ADMIN_ALLOW_REMOTE, false),
+    // Kirish tokeni shu maxfiy kalit bilan imzolanadi (kod ochiq bo'lsa ham tokenni hisoblab bo'lmaydi)
+    secret: process.env.ADMIN_SECRET || process.env.BOT_TOKEN || 'hisobchi-local-secret',
   },
 
   auth: {

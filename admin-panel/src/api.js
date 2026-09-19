@@ -1,4 +1,7 @@
-const BASE = '/api/admin';
+// Vercel'da backend boshqa domenda (Render) turadi — manzili VITE_API_URL orqali beriladi.
+// Kompyuterda bo'sh: so'rovlar Vite proxy orqali localhost:5000 ga boradi.
+const API_URL = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+const BASE = `${API_URL}/api/admin`;
 const TOKEN_KEY = 'hisobchi_admin_token';
 
 let unauthorizedHandler = () => {};
@@ -50,7 +53,11 @@ async function request(method, path, { params, body, raw = false } = {}) {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
-    throw new Error('Server bilan aloqa yo\'q. Backend ishga tushganini tekshiring (npm run dev).');
+    throw new Error(
+      API_URL
+        ? "Server bilan aloqa yo'q. Render'dagi backend ishlayotganini tekshiring (bepul tarifda uyg'onishi 1 daqiqagacha olishi mumkin)."
+        : "Server bilan aloqa yo'q. Backend ishga tushganini tekshiring (npm run dev)."
+    );
   }
 
   if (res.status === 401 && path !== '/login') {

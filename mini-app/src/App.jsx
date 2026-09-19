@@ -38,11 +38,18 @@ function localOnboarded() {
 }
 
 function Splash() {
+  // Bepul serverlar uxlab qolgan bo'lsa, birinchi ochilish biroz vaqt oladi — foydalanuvchiga tushuntiramiz
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setSlow(true), 4000);
+    return () => clearTimeout(t);
+  }, []);
   return (
     <div className="splash">
       <div className="splash-logo">📒</div>
       <div className="splash-name">Hisobchi</div>
       <div className="spinner" />
+      {slow && <p className="muted small center pad-x">Server uyg'onmoqda, biroz kuting...</p>}
     </div>
   );
 }

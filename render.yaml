@@ -1,0 +1,35 @@
+# Render Blueprint: backend (API + Telegram bot)
+# Render → New → Blueprint → shu repozitoriy tanlanadi va xizmat avtomatik sozlanadi.
+services:
+  - type: web
+    name: hisobchi-mini-bot-api
+    runtime: node
+    # Neon bazasi ham AQSh (Ogayo) hududida — server bazaga yaqin bo'lsa, javoblar tez
+    region: ohio
+    plan: free
+    branch: main
+    buildCommand: npm install && npm run db:deploy
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ALLOW_DEV_AUTH
+        value: "false"
+      - key: ADMIN_ALLOW_REMOTE
+        value: "true"
+      - key: WEBAPP_URL
+        value: https://hisobchi-mini-app.vercel.app
+      - key: DAILY_REPORT_CRON
+        value: "0 21 * * *"
+      - key: ADMIN_SECRET
+        generateValue: true
+      # Quyidagilar maxfiy — Render yaratishda ularni so'raydi
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false

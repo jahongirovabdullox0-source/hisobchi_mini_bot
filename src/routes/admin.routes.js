@@ -1,11 +1,11 @@
 const { Router } = require('express');
-const { adminAuth, localOnly } = require('../middlewares/auth.middleware');
+const { adminAuth, localOnly, loginLimiter } = require('../middlewares/auth.middleware');
 const c = require('../controllers/adminController');
 
 const router = Router();
 
 router.use(localOnly);
-router.post('/login', c.login);
+router.post('/login', loginLimiter, c.login);
 
 router.use(adminAuth);
 

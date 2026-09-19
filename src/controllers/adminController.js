@@ -10,7 +10,13 @@ const report = require('../services/report.service');
 const notify = require('../services/notify.service');
 const ratesService = require('../services/rates.service');
 const { buildAdminReport } = require('../services/export.service');
-const { adminToken, checkAdminPassword } = require('../middlewares/auth.middleware');
+const {
+  adminToken,
+  checkAdminPassword,
+  isWeakAdminPassword,
+  recordLoginFail,
+  resetLoginFails,
+} = require('../middlewares/auth.middleware');
 const { getRange, rangeWhere } = require('../utils/period');
 const { escapeHtml } = require('../utils/format');
 const {
@@ -33,10 +39,18 @@ const pageOf = (q, def = 20) => ({
 /* ============================ KIRISH ============================ */
 
 const login = asyncHandler(async (req, res) => {
+  if (config.admin.allowRemote && isWeakAdminPassword()) {
+    throw new HttpError(
+      403,
+      "Xavfsizlik: Admin Panel internetga ochiq, lekin ADMIN_PASSWORD juda oddiy. Serverda kamida 10 belgili murakkab parol o'rnating."
+    );
+  }
   if (!checkAdminPassword(req.body && req.body.password)) {
+    recordLoginFail(req.ip);
     await new Promise((r) => setTimeout(r, 400));
     throw new HttpError(401, "Parol noto'g'ri");
   }
+  resetLoginFails(req.ip);
   res.json({ token: adminToken() });
 });
 

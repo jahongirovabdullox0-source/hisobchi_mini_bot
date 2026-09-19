@@ -1,6 +1,9 @@
 import { tg } from './telegram';
 
-const BASE = '/api/client';
+// Vercel'da backend boshqa domenda (Render) turadi — manzili VITE_API_URL orqali beriladi.
+// Kompyuterda bo'sh: so'rovlar shu domenning o'ziga (Vite proxy yoki Express) boradi.
+const API_URL = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+const BASE = `${API_URL}/api/client`;
 
 async function request(method, path, { params, body } = {}) {
   let url = BASE + path;
@@ -13,7 +16,7 @@ async function request(method, path, { params, body } = {}) {
     if (s) url += `?${s}`;
   }
 
-  const headers = { 'ngrok-skip-browser-warning': '1' };
+  const headers = API_URL ? {} : { 'ngrok-skip-browser-warning': '1' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (tg && tg.initData) headers['X-Telegram-Init-Data'] = tg.initData;
 

@@ -4,8 +4,9 @@ Bog'dorchilik, chorvachilik, tadbirkorlik va chet eldan keladigan pullar bo'yich
 alohida-alohida hisoblaydigan Telegram bot + Mini App + Admin Panel.
 
 - Bot: **@hisobchi_mini_bot**
-- Admin Panel: http://localhost:5174 (parol — `.env` dagi `ADMIN_PASSWORD`)
-- Mini App (Telegram uchun): `.env` dagi `WEBAPP_URL` (ngrok orqali avtomatik)
+- Mini App: https://hisobchi-mini-app.vercel.app
+- Admin Panel: https://hisobchi-admin-three.vercel.app
+- Backend (API + bot): https://hisobchi-mini-bot-api.onrender.com — joylash qo'llanmasi: [DEPLOY.md](DEPLOY.md)
 
 ## Imkoniyatlar
 
